@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三年級生字部首大挑戰</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            overflow: hidden; /* 防止出現卷軸 */
+        }
+
+        .cute-box {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 2rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1), 0 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+
+        .cute-btn {
+            transition: all 0.1s;
+            box-shadow: 0 6px 0 currentcolor;
+        }
+        
+        .cute-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 0px 0 currentcolor;
+        }
+
+        .option-btn {
+            box-shadow: 0 6px 0 #93C5FD;
+            border-color: #93C5FD;
+        }
+        .option-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 0px 0 #93C5FD;
+        }
+
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        .bounce {
+            animation: bounce 0.5s;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
+            40%, 60% { transform: translate3d(8px, 0, 0); }
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-30px);}
+            60% {transform: translateY(-15px);}
+        }
+
+        /* 隱藏不想顯示的畫面 */
+        .hidden-screen {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <!-- 開始畫面 -->
+    <div id="start-screen" class="cute-box w-full max-w-md p-8 flex flex-col items-center text-center">
+        <div class="text-7xl mb-4">🏫🦕🎈</div>
+        <h1 class="text-4xl font-black text-blue-500 mb-2 tracking-wider">生字部首</h1>
+        <h2 class="text-5xl font-black text-pink-500 mb-6 drop-shadow-sm">大挑戰！</h2>
+        
+        <div class="bg-yellow-100 rounded-2xl p-4 mb-8 w-full border-4 border-yellow-300">
+            <p class="text-xl font-bold text-gray-700 mb-2">⏱️ 挑戰時間：3 分鐘</p>
+            <p class="text-xl font-bold text-gray-700 mb-2">🎯 規則：選出正確的部首</p>
+            <p class="text-lg font-bold text-pink-600">正確率高的可以上排行榜喔！</p>
+        </div>
+
+        <button onclick="startGame()" class="cute-btn w-full py-4 bg-green-400 hover:bg-green-500 text-white text-3xl font-black rounded-full text-[#2E8B57] mb-4">
+            開始遊戲 ▶️
+        </button>
+        <button onclick="showScreen('leaderboard-screen')" class="text-blue-500 font-bold text-lg hover:underline">
+            🏆 查看英雄排行榜
+        </button>
+    </div>
+
+    <!-- 遊戲畫面 -->
+    <div id="game-screen" class="w-full max-w-lg hidden-screen flex-col items-center relative">
+        <!-- 狀態列 -->
+        <div class="bg-white/90 w-full rounded-2xl p-4 mb-6 shadow-md flex justify-between items-center border-4 border-white">
+            <div class="text-2xl font-bold text-gray-700">
+                ⭐ 答對: <span id="score-display" class="text-4xl text-green-500">0</span>
+            </div>
+            <div id="timer-container" class="text-2xl font-bold text-blue-600">
+                ⏰ <span id="time-display" class="text-4xl">03:00</span>
+            </div>
+        </div>
+
+        <!-- 題目區 -->
+        <div class="cute-box w-full p-8 flex flex-col items-center border-4 border-yellow-300 relative">
+            <h3 class="text-2xl font-bold text-gray-500 mb-2">這個字的部首是？</h3>
+            <div id="word-display" class="text-[130px] font-black text-gray-800 leading-none my-4 select-none">字</div>
+            
+            <!-- 回饋動畫圖示 -->
+            <div id="feedback-icon" class="absolute inset-0 flex items-center justify-center bg-white/90 rounded-[2rem] hidden z-10 text-9xl">
+                ⭕
+            </div>
+        </div>
+
+        <!-- 選項區 -->
+        <div id="options-container" class="grid grid-cols-2 gap-4 w-full mt-6">
+            <!-- 按鈕由 JS 生成 -->
+        </div>
+    </div>
+
+    <!-- 結算畫面 -->
+    <div id="end-screen" class="cute-box w-full max-w-md p-8 hidden-screen flex-col items-center text-center border-4 border-pink-300">
+        <div id="end-emoji" class="text-7xl mb-2">🎉</div>
+        <h2 id="end-title" class="text-4xl font-black text-pink-500 mb-6">時間到！</h2>
+        
+        <div class="bg-pink-50 p-6 rounded-3xl w-full mb-6 border-2 border-pink-200">
+            <p class="text-xl text-gray-700 font-bold mb-3">
+                總共作答：<span id="final-total" class="text-blue-600 text-3xl">0</span> 題
+            </p>
+            <p class="text-xl text-gray-700 font-bold mb-3">
+                答對題數：<span id="final-score" class="text-green-500 text-4xl">0</span> 題
+            </p>
+            <p class="text-xl text-gray-700 font-bold">
+                正確率：<span id="final-accuracy" class="text-pink-500 text-4xl">0%</span>
+            </p>
+        </div>
+
+        <div class="w-full">
+            <p class="text-gray-600 font-bold text-lg mb-2">請輸入你的名字：</p>
+            <input type="text" id="player-name" placeholder="你是誰呢？" maxlength="8"
+                   class="w-full px-4 py-3 text-2xl rounded-xl border-4 border-blue-200 text-center mb-6 focus:outline-none focus:border-blue-500 font-bold text-gray-700">
+            <button onclick="submitScore()" class="cute-btn w-full py-4 bg-yellow-400 hover:bg-yellow-500 text-gray-800 text-3xl font-black rounded-full text-[#D97706]">
+                送出成績 🚀
+            </button>
+        </div>
+    </div>
+
+    <!-- 排行榜畫面 -->
+    <div id="leaderboard-screen" class="cute-box w-full max-w-md p-6 hidden-screen flex-col items-center border-4 border-blue-300">
+        <h2 class="text-4xl font-black text-blue-600 mb-6 flex items-center gap-2">🏆 英雄排行榜</h2>
+        
+        <div class="w-full bg-blue-50 rounded-2xl p-4 mb-6 h-[350px] overflow-y-auto border-2 border-blue-200">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="text-gray-500 border-b-2 border-blue-200">
+                        <th class="pb-2 text-xl">名次</th>
+                        <th class="pb-2 text-xl">名字</th>
+                        <th class="pb-2 text-xl text-center">答對</th>
+                        <th class="pb-2 text-xl text-right">正確率</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                    <!-- 排行榜資料由 JS 生成 -->
+                </tbody>
+            </table>
+            <p id="empty-leaderboard" class="text-center text-gray-500 font-bold mt-10 hidden">目前還沒有人上榜喔，趕快來挑戰！</p>
+        </div>
+
+        <button onclick="showScreen('start-screen')" class="cute-btn w-full py-4 bg-pink-400 hover:bg-pink-500 text-white text-3xl font-black rounded-full text-[#BE185D]">
+            回首頁 🏠
+        </button>
+    </div>
+
+    <script>
+        // === 生字與部首資料庫 ===
+        const wordData = [
+            { char: '撐', radical: '手' }, { char: '首', radical: '首' }, { char: '符', radical: '竹' }, { char: '膀', radical: '肉' },
+            { char: '鼻', radical: '鼻' }, { char: '環', radical: '玉' }, { char: '搗', radical: '手' }, { char: '亂', radical: '乙' },
+            { char: '恐', radical: '心' }, { char: '尖', radical: '小' }, { char: '嘴', radical: '口' }, { char: '吼', radical: '口' },
+            { char: '鐵', radical: '金' }, { char: '碗', radical: '石' }, { char: '另', radical: '口' }, { char: '彎', radical: '弓' },
+            { char: '鉤', radical: '金' }, { char: '推', radical: '手' }, { char: '羨', radical: '羊' }, { char: '慕', radical: '心' },
+            { char: '娃', radical: '女' }, { char: '捲', radical: '手' }, { char: '躺', radical: '身' }, { char: '裙', radical: '衣' },
+            { char: '擺', radical: '手' }, { char: '參', radical: '厶' }, { char: '容', radical: '宀' }, { char: '炎', radical: '火' },
+            { char: '玉', radical: '玉' }, { char: '凍', radical: '冫' }, { char: '薄', radical: '艸' }, { char: '暑', radical: '日' },
+            { char: '品', radical: '口' }, { char: '籽', radical: '米' }, { char: '晒', radical: '日' }, { char: '摸', radical: '手' },
+            { char: '刺', radical: '刀' }, { char: '器', radical: '口' }, { char: '袋', radical: '衣' }, { char: '綁', radical: '糸' },
+            { char: '搓', radical: '手' }, { char: '糖', radical: '米' }, { char: '名', radical: '口' }, { char: '丞', radical: '一' },
+            { char: '曹', radical: '曰' }, { char: '楊', radical: '木' }, { char: '修', radical: '人' }, { char: '智', radical: '日' },
+            { char: '應', radical: '心' }, { char: '官', radical: '宀' }, { char: '府', radical: '广' }, { char: '差', radical: '工' },
+            { char: '思', radical: '心' }, { char: '報', radical: '土' }, { char: '闊', radical: '門' }, { char: '酪', radical: '酉' },
+            { char: '驚', radical: '馬' }, { char: '鞠', radical: '革' }, { char: '躬', radical: '身' }, { char: '弄', radical: '廾' },
+            { char: '文', radical: '文' }, { char: '厲', radical: '厂' }, { char: '鬥', radical: '鬥' }, { char: '千', radical: '十' },
+            { char: '普', radical: '日' }, { char: '閉', radical: '門' }, { char: '錢', radical: '金' }, { char: '偏', radical: '人' },
+            { char: '查', radical: '木' }, { char: '偷', radical: '人' }, { char: '胡', radical: '肉' }, { char: '村', radical: '木' },
+            { char: '猴', radical: '犬' }, { char: '抖', radical: '手' }, { char: '造', radical: '辵' }, { char: '助', radical: '力' },
+            { char: '展', radical: '尸' }, { char: '簧', radical: '竹' }, { char: '摔', radical: '手' }, { char: '巨', radical: '工' },
+            { char: '引', radical: '弓' }, { char: '觀', radical: '見' }, { char: '咦', radical: '口' }, { char: '松', radical: '木' },
+            { char: '鼠', radical: '鼠' }, { char: '混', radical: '水' }
+        ];
+
+        // 提取所有不重複的部首
+        const allRadicals = [...new Set(wordData.map(w => w.radical))];
+
+        // === 遊戲狀態 ===
+        let score = 0;
+        let totalAnswered = 0;
+        let timeLeft = 180; // 3分鐘
+        let timerInterval;
+        let currentWordInfo = null;
+        let isProcessingAnswer = false;
+
+        // === 網頁音效生成器 ===
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playTone(freq, type, duration) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playCorrectSound() {
+            playTone(659.25, 'sine', 0.1); // Mi
+            setTimeout(() => playTone(880, 'sine', 0.2), 100); // La
+        }
+
+        function playWrongSound() {
+            playTone(300, 'triangle', 0.3);
+            setTimeout(() => playTone(250, 'triangle', 0.3), 150);
+        }
+
+        function playEndSound() {
+            playTone(523.25, 'square', 0.2); // Do
+            setTimeout(() => playTone(659.25, 'square', 0.2), 200); // Mi
+            setTimeout(() => playTone(783.99, 'square', 0.4), 400); // Sol
+        }
+
+        // === 畫面切換控制 ===
+        function showScreen(screenId) {
+            const screens = ['start-screen', 'game-screen', 'end-screen', 'leaderboard-screen'];
+            screens.forEach(id => {
+                document.getElementById(id).classList.add('hidden-screen');
+                if (id !== 'game-screen') {
+                    document.getElementById(id).style.display = 'flex';
+                }
+            });
+            
+            const target = document.getElementById(screenId);
+            target.classList.remove('hidden-screen');
+            if (screenId === 'game-screen') {
+                target.style.display = 'flex';
+            }
+
+            if (screenId === 'leaderboard-screen') {
+                renderLeaderboard();
+            }
+        }
+
+        // === 遊戲邏輯 ===
+        function startGame() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            score = 0;
+            totalAnswered = 0;
+            timeLeft = 180;
+            isProcessingAnswer = false;
+            
+            updateScoreDisplay();
+            updateTimeDisplay();
+            
+            showScreen('game-screen');
+            generateQuestion();
+            
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimeDisplay();
+                
+                if (timeLeft <= 10) {
+                    document.getElementById('timer-container').classList.add('text-red-500', 'animate-pulse');
+                    document.getElementById('timer-container').classList.remove('text-blue-600');
+                } else {
+                    document.getElementById('timer-container').classList.remove('text-red-500', 'animate-pulse');
+                    document.getElementById('timer-container').classList.add('text-blue-600');
+                }
+
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function updateTimeDisplay() {
+            const m = Math.floor(timeLeft / 60);
+            const s = timeLeft % 60;
+            document.getElementById('time-display').innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+        }
+
+        function updateScoreDisplay() {
+            document.getElementById('score-display').innerText = score;
+        }
+
+        function generateQuestion() {
+            // 隨機選一個字
+            currentWordInfo = wordData[Math.floor(Math.random() * wordData.length)];
+            const correctRadical = currentWordInfo.radical;
+            
+            // 選3個不重複的錯誤選項
+            let wrongOptions = [];
+            while (wrongOptions.length < 3) {
+                const randomRadical = allRadicals[Math.floor(Math.random() * allRadicals.length)];
+                if (randomRadical !== correctRadical && !wrongOptions.includes(randomRadical)) {
+                    wrongOptions.push(randomRadical);
+                }
+            }
+            
+            // 組合選項並打亂
+            const options = [...wrongOptions, correctRadical].sort(() => Math.random() - 0.5);
+            
+            // 更新畫面
+            document.getElementById('word-display').innerText = currentWordInfo.char;
+            
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn bg-white hover:bg-blue-50 text-blue-600 text-5xl font-black py-6 rounded-2xl border-4 transition-all';
+                btn.innerText = opt;
+                btn.onclick = () => handleAnswer(opt);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(selected) {
+            if (isProcessingAnswer) return;
+            isProcessingAnswer = true;
+            
+            totalAnswered++;
+            const isCorrect = selected === currentWordInfo.radical;
+            const feedbackIcon = document.getElementById('feedback-icon');
+            
+            feedbackIcon.classList.remove('hidden');
+            
+            if (isCorrect) {
+                score++;
+                updateScoreDisplay();
+                playCorrectSound();
+                feedbackIcon.innerText = '⭕';
+                feedbackIcon.className = 'absolute inset-0 flex items-center justify-center bg-white/80 rounded-[2rem] z-10 text-[150px] text-green-500 bounce';
+            } else {
+                playWrongSound();
+                feedbackIcon.innerText = '❌';
+                feedbackIcon.className = 'absolute inset-0 flex items-center justify-center bg-white/80 rounded-[2rem] z-10 text-[150px] text-red-500 shake';
+            }
+
+            setTimeout(() => {
+                feedbackIcon.classList.add('hidden');
+                generateQuestion();
+                isProcessingAnswer = false;
+            }, 600);
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            playEndSound();
+            
+            const accuracy = totalAnswered === 0 ? 0 : Math.round((score / totalAnswered) * 100);
+            
+            document.getElementById('final-total').innerText = totalAnswered;
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('final-accuracy').innerText = accuracy + '%';
+            
+            let title = "再接再厲！";
+            let emoji = "💪";
+            if (accuracy >= 90) { title = "部首大師！"; emoji = "👑"; }
+            else if (accuracy >= 70) { title = "表現很棒！"; emoji = "🌟"; }
+            
+            document.getElementById('end-title').innerText = title;
+            document.getElementById('end-emoji').innerText = emoji;
+            document.getElementById('player-name').value = '';
+            
+            showScreen('end-screen');
+        }
+
+        // === 排行榜邏輯 ===
+        function submitScore() {
+            const nameInput = document.getElementById('player-name').value.trim();
+            if (!nameInput) {
+                alert("請輸入你的名字喔！");
+                return;
+            }
+
+            const accuracy = totalAnswered === 0 ? 0 : Math.round((score / totalAnswered) * 100);
+            const newEntry = { name: nameInput, score: score, accuracy: accuracy };
+            
+            let leaderboard = [];
+            try {
+                const saved = localStorage.getItem('radical-game-leaderboard');
+                if (saved) leaderboard = JSON.parse(saved);
+            } catch(e) {}
+
+            leaderboard.push(newEntry);
+            // 排序：分數高優先，分數一樣正確率高優先
+            leaderboard.sort((a, b) => b.score - a.score || b.accuracy - a.accuracy);
+            // 只留前10名
+            leaderboard = leaderboard.slice(0, 10);
+
+            try {
+                localStorage.setItem('radical-game-leaderboard', JSON.stringify(leaderboard));
+            } catch(e) {}
+
+            showScreen('leaderboard-screen');
+        }
+
+        function renderLeaderboard() {
+            let leaderboard = [];
+            try {
+                const saved = localStorage.getItem('radical-game-leaderboard');
+                if (saved) leaderboard = JSON.parse(saved);
+            } catch(e) {}
+
+            const tbody = document.getElementById('leaderboard-body');
+            const emptyMsg = document.getElementById('empty-leaderboard');
+            
+            tbody.innerHTML = '';
+            
+            if (leaderboard.length === 0) {
+                emptyMsg.classList.remove('hidden');
+            } else {
+                emptyMsg.classList.add('hidden');
+                leaderboard.forEach((entry, idx) => {
+                    let rankDisplay = `${idx + 1}.`;
+                    if (idx === 0) rankDisplay = '🥇';
+                    if (idx === 1) rankDisplay = '🥈';
+                    if (idx === 2) rankDisplay = '🥉';
+
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b border-blue-100 font-bold text-gray-700 text-xl';
+                    tr.innerHTML = `
+                        <td class="py-3 pl-2">${rankDisplay}</td>
+                        <td class="py-3 max-w-[120px] truncate">${escapeHTML(entry.name)}</td>
+                        <td class="py-3 text-center text-green-500">${entry.score}</td>
+                        <td class="py-3 text-right pr-2 text-pink-500">${entry.accuracy}%</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        // 防止 XSS 攻擊的輔助函式
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+
+        // 初始化顯示開始畫面
+        showScreen('start-screen');
+
+    </script>
+</body>
+</html>
